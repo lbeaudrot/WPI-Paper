@@ -1,5 +1,5 @@
 # Descriptive Results for WPI Paper
-
+# Make test change here for commit/push/pull
 # Read in the last 1000 iterations of the WPI for the 3 types of modeling cases
 WPIbinomial <- read.csv("psi_species_model_binomial_last1000.csv")
 WPIsimple <- read.csv("psi_species_simplemodel_last1000.csv")
