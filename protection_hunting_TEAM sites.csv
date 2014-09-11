@@ -1,0 +1,17 @@
+Site,orig_protection,orig_poach,poaching,poaching_level,land_use,protection,protection_level
+BBS,2,3,1,low,III,2,low
+BCI,2,3.5,1,low,II,2,low
+BIF,2,3,1,low,III,2,low
+CAX,1,2,1,low,I,1,high
+COU,1,1,1,low,I,1,high
+CSN,3,5,2,high,I,2,low
+KRP,3,5,2,high,II,2,low
+MAN,3,2,1,low,II,2,low
+NAK,2,5,2,high,III,2,low
+NNN,2,1,1,low,I,2,low
+PSH,3,4,2,high,III,2,low
+RNF,2,3,1,low,III,2,low
+UDZ,1,3,1,low,II,1,high
+VB,2,3.5,1,low,III,2,low
+YAN,1,1,1,low,I,1,high
+YAS,3,4,2,high,I,2,low
