@@ -21,6 +21,8 @@ const_sp <- cbind(const_sp, const=rep(1, dim(const_sp)[1]))
 simple_sp <- taxonomy[match(simple, taxonomy$id),]
 simple_sp <- cbind(simple_sp, simple=rep(1, dim(simple_sp)[1]))
 
+# Examine distribution of species modeled with covariates compared to overall species
+library(Deducer)
 
 # Add column to the 3 objects above pre-merge so that case can be identified in merged object
 Merge1 <- merge(binomial_sp, const_sp, by.x="bin", by.y="bin", all=TRUE)
