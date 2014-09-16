@@ -113,16 +113,9 @@ ind95_num <- ifelse(WPI$ind95=="decreasing", -1,
                            ifelse(WPI$ind95=="increasing", 1, NA)))
 ind95_num <- as.factor(ind95_num)
 WPI <- cbind(ind80_num, ind95_num, WPI)
-#WPI <- cbind(WPI[,1:17], WPI[,35:39])
-names(WPI)
-WPI$protection <- as.ordered(WPI$protection)
-WPI$Category <- as.ordered(WPI$Category)
-WPI$poaching <- as.ordered(WPI$poaching)
+WPI$rls[WPI$sp=="Gorilla gorilla"] <- NA
+WPI$rls <- factor(WPI$rls)
 
-# Exclude Pasoh to examine effects of outlier on forest loss effect
-# WPI <- subset(WPI, site!="PSH")
-# Exclude Volcan Barva to examine effects of potential outlier on number of years
-# WPI <- subset(WPI, site!="VB")
 
 # Ordered logistic models
 
@@ -145,7 +138,7 @@ m2 <- clm(ind80_num ~ log(mass), data=WPI)
 summary(m2)
 m3 <- clm(ind80_num ~ guild, data=WPI)
 summary(m3)
-m4 <- clm(ind80_num ~ rls, data=WPI[-343,])
+m4 <- clm(ind80_num ~ rls, data=WPI)
 summary(m4)
 
 # Site attribute models
@@ -281,7 +274,7 @@ pchisq(deviance(test.fit2) - deviance(test.fit1), df=df.residual(test.fit1) - df
 
 plot(WPI$protection_level, WPI$ind80_num, xlab="Protection Level", ylab="Population Status")
 
-wpi <- read.csv("Species-site-results_reduced.csv")
+wpi <- WPI
 
 nyears.raw <- ftable(wpi$ind80, wpi$nyears)
 nyears.total <- cbind(
@@ -298,17 +291,16 @@ rownames(hold) <- c("Increasing", "Stable", "Decreasing")
 barplot(hold, horiz=TRUE, col=c("green4", "gray", "red4"), ylab="Monitoring Duration (years)")
 
 
-protec.raw <- ftable(wpi$ind80, wpi$protection)
+protec.raw <- ftable(wpi$ind80, wpi$protection_level)
 protec.total <- cbind(
   rep(colSums(protec.raw)[1], 3),
-  rep(colSums(protec.raw)[2], 3),
-  rep(colSums(protec.raw)[3], 3))
+  rep(colSums(protec.raw)[2], 3))
 protec.per <- (protec.raw/protec.total)*100
 barplot(protec.per, horiz=FALSE)
 holda <- rbind(protec.per[2:3,], protec.per[1,])
 colnames(holda) <- levels(WPI$protection)
-hold1 <- cbind(holda[,3], holda[,2], holda[,1])
-colnames(hold1) <- c("Low", "Medium", "High")
+hold1 <- cbind(holda[,2], holda[,1])
+colnames(hold1) <- c("Low", "High")
 rownames(hold1) <- c("Increasing", "Stable", "Decreasing")
 barplot(hold1, horiz=TRUE, col=c("green4", "gray", "red4"), ylab="Protection")
 
