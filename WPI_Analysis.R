@@ -207,10 +207,25 @@ rownames(m12.95table) <- c("N years", "Protection (low)", "Forest loss (%)")
 #write.table(summary(m12.95)[5], "m12.95estimates.csv", sep=",")
 
 # Remove Pasoh (forest loss outlier) and produce results tables
+WPI.PSH <- WPI[WPI$site!="PSH",]
 
+m12.PSH <- clmm2(ind80_num ~ nyears + protection_level + log(T75_Loss_SampleArea_Pct), data=WPI.PSH)
+summary(m12.PSH)
+exp(cbind(odds=coef(m12.PSH)[3:5], confint(m12.PSH)))
 
+m12.95.PSH <- clm(ind95_num ~ nyears + protection_level + log(T75_Loss_SampleArea_Pct), data=WPI.PSH)
+summary(m12.95.PSH)
+exp(cbind(odds=coef(m12.95.PSH)[3:5], confint(m12.95.PSH)))
 
+m12.table.PSH <- round(exp(cbind(odds=coef(m12.PSH)[3:5], confint(m12.PSH))), 2)
+rownames(m12.table.PSH) <- c("N years", "Protection (low)", "Forest loss (%)")
 
+m12.95table.PSH <- round(exp(cbind(odds=coef(m12.95)[3:5], confint(m12.95))), 2)
+rownames(m12.95table.PSH) <- c("N years", "Protection (low)", "Forest loss (%)")
+
+#write.table(rbind(m12.table.PSH, m12.95table.PSH), "m12output.PSH.csv", sep=",")
+#write.table(summary(m12.PSH)[6], "m12estimates.PSH.csv", sep=",")
+#write.table(summary(m12.95.PSH)[5], "m12.95estimates.PSH.csv", sep=",")
 
 # Use methods from Gelman & Hill p. 122 for ordinal logistic modeling and visualization
 
