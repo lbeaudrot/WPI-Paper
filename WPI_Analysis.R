@@ -163,7 +163,7 @@ summary(m11.7)
 
 
 # Use model selection to compare ranking of individual predictors
-SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m11.5, rank=AIC)
+SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m11.5, m11.7, rank=AIC)
 
 #write.table(SinglePredic.Sel, file="SinglePredic.Sel.csv", sep=",")
 
@@ -334,3 +334,18 @@ mtext("                     Increasing", adj=0, side=1, line=2, outer=TRUE, col=
 mtext("Decreasing   ", adj=1, side=1, line=2, outer=TRUE, col="red4")
 mtext("Site Characteristics", side=2, line=1, outer=TRUE, cex=1.5)
 dev.off()
+
+
+
+# Examine IUCN status and population trends in more detail
+IUCN.class <- table(WPI$rls, WPI$class)
+IUCN.class[,1]/sum(IUCN.class[,1]) # % Birds in each IUCN category
+IUCN.class[,2]/sum(IUCN.class[,2]) # % Mammals in each IUCN category
+IUCN.status <- table(WPI$rls, WPI$ind80)
+
+# Load g.test function and examine whether there are differences in the proportion of population trends each IUCN category compared to overall
+g.test(cbind(IUCN.status[2,],table(WPI$ind80))) # DD - data deficient
+g.test(cbind(IUCN.status[3,],table(WPI$ind80))) # EN - endangered
+g.test(cbind(IUCN.status[4,],table(WPI$ind80))) # LC - least concern
+g.test(cbind(IUCN.status[5,],table(WPI$ind80))) # NT - near threatened
+g.test(cbind(IUCN.status[6,],table(WPI$ind80))) # VU - vulnerable
