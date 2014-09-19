@@ -153,18 +153,16 @@ m8 <- clm(ind80_num ~ Category, data=WPI)
 summary(m8)
 m9 <- clm(ind80_num ~ log(T75_Loss_SampleArea_Pct), data=WPI)
 summary(m9)
-m10 <- clm(ind80_num ~ log(T75_Loss_ZOI_Pct), data=WPI)
+m10 <- clm(ind80_num ~ land_use, data=WPI)
 summary(m10)
-m11 <- clm(ind80_num ~ land_use, data=WPI)
+m11 <- clm(ind80_num ~ cont, data=WPI)
 summary(m11)
-m11.5 <- clm(ind80_num ~ cont, data=WPI)
+m11.5 <- clm(ind80_num ~ site, data=WPI)
 summary(m11.5)
-m11.7 <- clm(ind80_num ~ site, data=WPI)
-summary(m11.7)
 
 
 # Use model selection to compare ranking of individual predictors
-SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m11.5, m11.7, rank=AIC)
+SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m11.5, rank=AIC)
 
 #write.table(SinglePredic.Sel, file="SinglePredic.Sel.csv", sep=",")
 
