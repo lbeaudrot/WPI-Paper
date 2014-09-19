@@ -80,9 +80,10 @@ length(unique(alldata$sp))
 hist(table(alldata$sp))
 table(table(alldata$sp))
 
-
-
-
+pdf(file="DistributionSpeciesSites.pdf")
+par(mar=c(5,7,0,1))
+plot(table(table(alldata$sp)), main="", xlab="TEAM Sites", ylab="Number of Species", ylim=c(0,130), las=1, cex.axis=2, cex.lab=2, lwd=7, mgp=c(4,1,0))
+dev.off()
 
 
 
@@ -356,3 +357,12 @@ g.test(ExcludeEN)
 g.test(ExcludeCR)
 g.test(ExcludeCR.EN)
 # Only the endangered category is significantly different; all others are proportional
+
+
+
+# Examine the consistency in population status for species found at multiple sites
+
+multiples <- table(WPI$sp,WPI$ind80)
+multiples <- cbind(multiples, tot=rowSums(multiples))
+multiples <- as.data.frame(multiples)
+multiples <- multiples[multiples$tot>2,]
