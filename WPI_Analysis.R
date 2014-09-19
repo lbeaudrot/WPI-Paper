@@ -349,3 +349,10 @@ g.test(cbind(IUCN.status[3,],table(WPI$ind80))) # EN - endangered
 g.test(cbind(IUCN.status[4,],table(WPI$ind80))) # LC - least concern
 g.test(cbind(IUCN.status[5,],table(WPI$ind80))) # NT - near threatened
 g.test(cbind(IUCN.status[6,],table(WPI$ind80))) # VU - vulnerable
+ExcludeEN <- IUCN.status[-3,]
+ExcludeCR <- IUCN.status[2:6,]
+ExcludeCR.EN <- ExcludeCR[-2,]
+g.test(ExcludeEN)
+g.test(ExcludeCR)
+g.test(ExcludeCR.EN)
+# Only the endangered category is significantly different; all others are proportional
