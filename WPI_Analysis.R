@@ -183,7 +183,7 @@ m12.95 <- clm(ind95_num ~ nyears + protection_level + log(T75_Loss_SampleArea_Pc
 summary(m12.95)
 exp(cbind(odds=coef(m12.95)[3:6], confint(m12.95)))
 
-m12clm <- clm(ind80_num ~ nyears + protection + log(T75_Loss_SampleArea_Pct), data=WPI)
+m12clm <- clm(ind80_num ~ nyears + protection_level + log(T75_Loss_SampleArea_Pct), data=WPI)
 TopPredic.Sel <- model.sel(m0, m5, m6, m9, m12clm, rank=AIC)
 #write.table(TopPredic.Sel, file="TopPredic.Sel.csv", sep=",")
 
