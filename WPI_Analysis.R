@@ -1,3 +1,8 @@
+# Updated WPI output file from Jorge on 25 September 2014
+newdata <- read.csv("Population_tables_WPI-new.csv")
+
+
+# Following input files use Summer 2014 WPI results for last 1000 iterations and will need to be updated
 # Descriptive Results for WPI Paper
 # Make test change here for commit/push/pull
 # Read in the last 1000 iterations of the WPI for the 3 types of modeling cases
