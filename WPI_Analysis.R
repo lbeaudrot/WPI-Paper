@@ -1,5 +1,13 @@
+
+
 # Updated WPI output file from Jorge on 25 September 2014
-newdata <- read.csv("Population_tables_WPI-new.csv")
+#newdata <- read.csv("Population_tables_WPI-new.csv")
+# Updated WPI output file from Jorge on 30 September 2014
+newdata <- read.csv("Species-site-results_Sep_2014_LB.csv")
+# Updated forest loss data from Alex on 10/1/2014. Use last column
+FL <- read.csv("20141001_PA_forest_loss.csv")
+newdataFL <- merge(newdata, FL, by.x="site", by.y="sitecode", all=TRUE)
+
 
 
 # Following input files use Summer 2014 WPI results for last 1000 iterations and will need to be updated
@@ -26,6 +34,18 @@ const_sp <- cbind(const_sp, const=rep(1, dim(const_sp)[1]))
 simple_sp <- taxonomy[match(simple, taxonomy$id),]
 simple_sp <- cbind(simple_sp, simple=rep(1, dim(simple_sp)[1]))
 
+# Identify the site and species for populations modeled with covariates
+sitekey <- read.csv("sitecode_key.csv")
+
+WPIsimple.code <- data.frame(WPIsimple, code=sitekey$sitecode[match(WPIsimple$site_id, sitekey$database_code)])
+WPIsimple.code <- data.frame(WPIsimple.code, bin=taxonomy$bin[match(WPIsimple$species_id, taxonomy$id)])
+WPIsimple.code <- data.frame(WPIsimple.code, site.sp=paste(WPIsimple.code$code, WPIsimple.code$bin, sep="."))
+WPIsimple.code <- data.frame(WPIsimple.code, sp.site=paste(WPIsimple.code$bin, WPIsimple.code$code, sep="."))
+
+pops <- unique(WPIsimple.code$site.sp)
+pops <- as.character(pops)
+
+pops <- data.frame(pops, site=substr(pops, 1, 3))
 # Examine distribution of species modeled with covariates compared to overall species
 # load function from file g.test.R
 # Note that function likelihood.test in package "Deducer" and function g.test produce identical results; can use either; g.test will work on server
@@ -156,40 +176,40 @@ m7 <- clm(ind80_num ~ poaching_level, data=WPI)
 summary(m7)
 m8 <- clm(ind80_num ~ Category, data=WPI)
 summary(m8)
-m9 <- clm(ind80_num ~ log(T75_Loss_SampleArea_Pct), data=WPI)
+m9 <- clm(ind80_num ~ log(loss_pct_cum), data=WPI)
 summary(m9)
-m10 <- clm(ind80_num ~ land_use, data=WPI)
+m10 <- clm(ind80_num ~ site_type, data=WPI)
 summary(m10)
 m11 <- clm(ind80_num ~ cont, data=WPI)
 summary(m11)
-m11.5 <- clm(ind80_num ~ site, data=WPI)
-summary(m11.5)
+m12 <- clm(ind80_num ~ site, data=WPI)
+summary(m12)
 
 
 # Use model selection to compare ranking of individual predictors
-SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m11.5, rank=AIC)
+SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, rank=AIC)
 
 #write.table(SinglePredic.Sel, file="SinglePredic.Sel.csv", sep=",")
 
 # Combine predictors that outperformed the null model into a single model
 # Compare model with and without a random effect for site
-m12.site <- clmm2(ind80_num ~ nyears + protection_level + log(T75_Loss_SampleArea_Pct), random=site, data=WPI, Hess=TRUE, nAGQ=10)
-summary(m12.site)
-m12.cont <- clmm2(ind80_num ~ nyears + protection_level + log(T75_Loss_SampleArea_Pct), random=cont, data=WPI, Hess=TRUE, nAGQ=10)
-summary(m12.cont)
-m12.sp <- clmm2(ind80_num ~ nyears + protection_level + log(T75_Loss_SampleArea_Pct), random=sp, data=WPI, Hess=TRUE, nAGQ=10)
-summary(m12.sp)
+m13.site <- clmm2(ind80_num ~ nyears + protection_level + log(loss_pct_cum), random=site, data=WPI, Hess=TRUE, nAGQ=10)
+summary(m13.site)
+m13.cont <- clmm2(ind80_num ~ nyears + protection_level + log(loss_pct_cum), random=cont, data=WPI, Hess=TRUE, nAGQ=10)
+summary(m13.cont)
+m13.sp <- clmm2(ind80_num ~ nyears + protection_level + log(loss_pct_cum), random=sp, data=WPI, Hess=TRUE, nAGQ=10)
+summary(m13.sp)
 
-m12 <- clmm2(ind80_num ~ nyears + protection_level + log(T75_Loss_SampleArea_Pct), data=WPI)
-summary(m12)
+m13 <- clmm2(ind80_num ~ nyears + protection_level + log(loss_pct_cum), data=WPI)
+summary(m13)
 exp(cbind(odds=coef(m12)[3:6], confint(m12)))
 
-m12.95 <- clm(ind95_num ~ nyears + protection_level + log(T75_Loss_SampleArea_Pct), data=WPI)
-summary(m12.95)
-exp(cbind(odds=coef(m12.95)[3:6], confint(m12.95)))
+m13.95 <- clm(ind95_num ~ nyears + protection_level + log(loss_pct_cum), data=WPI)
+summary(m13.95)
+exp(cbind(odds=coef(m13.95)[3:6], confint(m13.95)))
 
-m12clm <- clm(ind80_num ~ nyears + protection_level + log(T75_Loss_SampleArea_Pct), data=WPI)
-TopPredic.Sel <- model.sel(m0, m5, m6, m9, m12clm, rank=AIC)
+m13clm <- clm(ind80_num ~ nyears + protection_level + log(loss_pct_cum), data=WPI)
+TopPredic.Sel <- model.sel(m0, m5, m6, m9, m13clm, rank=AIC)
 #write.table(TopPredic.Sel, file="TopPredic.Sel.csv", sep=",")
 
 
