@@ -52,8 +52,10 @@ WPIsimple.code <- data.frame(WPIsimple.code, sp.site=paste(WPIsimple.code$bin, W
 
 pops <- unique(WPIsimple.code$site.sp)
 pops <- as.character(pops)
-
 pops <- data.frame(pops, site=substr(pops, 1, 3))
+pops <- data.frame(pops, bin=substr(pops$pops, 5, nchar(as.vector(pops$pops))-0))
+write.csv(pops, file="WPI_Covariate_Populations.csv")
+
 # Examine distribution of species modeled with covariates compared to overall species
 # load function from file g.test.R
 # Note that function likelihood.test in package "Deducer" and function g.test produce identical results; can use either; g.test will work on server
