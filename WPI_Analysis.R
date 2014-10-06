@@ -5,8 +5,16 @@
 # Updated WPI output file from Jorge on 30 September 2014
 newdata <- read.csv("Species-site-results_Sep_2014_LB.csv")
 # Updated forest loss data from Alex on 10/1/2014. Use last column
-FL <- read.csv("20141001_PA_forest_loss.csv")
-newdataFL <- merge(newdata, FL, by.x="site", by.y="sitecode", all=TRUE)
+#FL <- read.csv("20141001_PA_forest_loss.csv")
+#newdataFL <- merge(newdata, FL, by.x="site", by.y="sitecode", all=TRUE)
+# Updated data on forest loss from Alex on 10/6/2014. These are
+# calculated for the five years preceding the beginning of camera trap
+# monitoring at each site. I have added a "ZOIminusPA" column that is
+# calculated for a polygon equal to the difference of the ZOI and PA
+# polygons (so exclusive of the PA area).
+FL2 <- read.csv("20141004_forest_loss.csv")
+FL2 <- cast(FL2, sitecode ~ aoi, value="loss_pct")
+newdataFL <- merge(newdata, FL2, by.x="site", by.y="sitecode", all=TRUE)
 
 
 
@@ -129,7 +137,8 @@ library(ggplot2)
 
 # Read in WPI output table and format data for ordinal logistic modeling
 #WPI <- read.csv("Species-site-results_reduced.csv")
-WPI <- alldata
+#WPI <- alldata
+WPI <- newdataFL
 ind80_num <- ifelse(WPI$ind80=="decreasing", -1, 
                     ifelse(WPI$ind80=="stable", 0, 
                            ifelse(WPI$ind80=="increasing", 1, NA)))
@@ -138,9 +147,10 @@ ind95_num <- ifelse(WPI$ind95=="decreasing", -1,
                     ifelse(WPI$ind95=="stable", 0, 
                            ifelse(WPI$ind95=="increasing", 1, NA)))
 ind95_num <- as.factor(ind95_num)
-WPI <- cbind(ind80_num, ind95_num, WPI)
-WPI$rls[WPI$sp=="Gorilla gorilla"] <- NA
-WPI$rls <- factor(WPI$rls)
+protection_level2 <- ifelse(WPI$protection_level=="fair"|WPI$protection_level=="poor", "poor", "good")
+WPI <- cbind(ind80_num, ind95_num, WPI, protection_level2)
+#WPI$rls[WPI$sp=="Gorilla gorilla"] <- EN
+#WPI$rls <- factor(WPI$rls)
 
 
 # Ordered logistic models
@@ -174,10 +184,14 @@ m6 <- clm(ind80_num ~ protection_level, data=WPI)
 summary(m6)
 m7 <- clm(ind80_num ~ poaching_level, data=WPI)
 summary(m7)
-m8 <- clm(ind80_num ~ Category, data=WPI)
+m8 <- clm(ind80_num ~ CSA, data=WPI)
 summary(m8)
-m9 <- clm(ind80_num ~ log(loss_pct_cum), data=WPI)
+m8.5 <- clm(ind80_num ~ PA, data=WPI)
+summary(m8.5)
+m9 <- clm(ind80_num ~ ZOI, data=WPI)
 summary(m9)
+m9.5 <- clm(ind80_num ~ ZOIminusPA, data=WPI)
+summary(m9.5)
 m10 <- clm(ind80_num ~ site_type, data=WPI)
 summary(m10)
 m11 <- clm(ind80_num ~ cont, data=WPI)
@@ -187,30 +201,45 @@ summary(m12)
 
 
 # Use model selection to compare ranking of individual predictors
-SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, rank=AIC)
+SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m4, m5, m6, m7, m8, m8.5, m9, m9.5, m10, m11, m12, rank=AIC)
 
 #write.table(SinglePredic.Sel, file="SinglePredic.Sel.csv", sep=",")
 
 # Combine predictors that outperformed the null model into a single model
 # Compare model with and without a random effect for site
-m13.site <- clmm2(ind80_num ~ nyears + protection_level + log(loss_pct_cum), random=site, data=WPI, Hess=TRUE, nAGQ=10)
+m13.site <- clmm2(ind80_num ~ nyears + protection_level + loss_pct_cum, random=site, data=WPI, Hess=TRUE, nAGQ=10)
 summary(m13.site)
-m13.cont <- clmm2(ind80_num ~ nyears + protection_level + log(loss_pct_cum), random=cont, data=WPI, Hess=TRUE, nAGQ=10)
+m13.cont <- clmm2(ind80_num ~ nyears + protection_level + loss_pct_cum, random=cont, data=WPI, Hess=TRUE, nAGQ=10)
 summary(m13.cont)
-m13.sp <- clmm2(ind80_num ~ nyears + protection_level + log(loss_pct_cum), random=sp, data=WPI, Hess=TRUE, nAGQ=10)
+m13.sp <- clmm2(ind80_num ~ nyears + protection_level + loss_pct_cum, random=sp, data=WPI, Hess=TRUE, nAGQ=10)
 summary(m13.sp)
 
-m13 <- clmm2(ind80_num ~ nyears + protection_level + log(loss_pct_cum), data=WPI)
+m13 <- clmm2(ind80_num ~ nyears + protection_level + loss_pct_cum, data=WPI)
 summary(m13)
 exp(cbind(odds=coef(m12)[3:6], confint(m12)))
 
-m13.95 <- clm(ind95_num ~ nyears + protection_level + log(loss_pct_cum), data=WPI)
+m13.95 <- clm(ind95_num ~ nyears + protection_level + loss_pct_cum, data=WPI)
 summary(m13.95)
 exp(cbind(odds=coef(m13.95)[3:6], confint(m13.95)))
 
-m13clm <- clm(ind80_num ~ nyears + protection_level + log(loss_pct_cum), data=WPI)
-TopPredic.Sel <- model.sel(m0, m5, m6, m9, m13clm, rank=AIC)
+m13clm <- clm(ind80_num ~ nyears + protection_level, data=WPI)
+summary(m13clm)
+m14clm <- clm(ind80_num ~ nyears + protection_level + CSA, data=WPI)
+summary(m14clm)
+m15clm <- clm(ind80_num ~ nyears + protection_level + PA, data=WPI)
+summary(m15clm)
+m16clm <- clm(ind80_num ~ nyears + protection_level + site_type, data=WPI)
+summary(m16clm)
+m17clm <- clm(ind80_num ~ nyears + protection_level + ZOI, data=WPI)
+summary(m17clm)
+m18clm <- clm(ind80_num ~ nyears + protection_level + site_type + protection_level*site_type, data=WPI)
+summary(m18clm)
+
+TopPredic.Sel <- model.sel(m0, m5, m6, m9, m13clm, m14clm, m15clm, m16clm, m17clm, m18clm, rank=AIC)
 #write.table(TopPredic.Sel, file="TopPredic.Sel.csv", sep=",")
+
+# Examine # sites with various protection levels and site types
+cast(WPI, site~site_type + protection_level)
 
 
 # Top model (m12) includes the number of years, protection status and a continuous measure of forest loss but no site random effect
@@ -389,3 +418,24 @@ multiples <- table(WPI$sp,WPI$ind80)
 multiples <- cbind(multiples, tot=rowSums(multiples))
 multiples <- as.data.frame(multiples)
 multiples <- multiples[multiples$tot>2,]
+
+
+test <- data.frame(multiples, tot=rowSums(multiples))
+
+# Visualize slopes
+
+ggplot(WPI, aes(median.coeff)) +
+    geom_histogram() +
+    facet_grid(nyears~.) +
+    xlim(-3, 3) +
+    xlab("Number of Years") +
+    ylab("Frequency")
+
+ggplot(WPI, aes(median.coeff)) +
+    geom_histogram() +
+    facet_grid(site~.) +
+    xlim(-3, 3) +
+    xlab("Median coef") +
+    ylab("Frequency")
+
+
