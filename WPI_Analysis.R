@@ -1,4 +1,4 @@
-
+library(reshape)
 
 # Updated WPI output file from Jorge on 25 September 2014
 #newdata <- read.csv("Population_tables_WPI-new.csv")
@@ -53,8 +53,10 @@ WPIsimple.code <- data.frame(WPIsimple.code, sp.site=paste(WPIsimple.code$bin, W
 pops <- unique(WPIsimple.code$site.sp)
 pops <- as.character(pops)
 pops <- data.frame(pops, site=substr(pops, 1, 3))
+
 pops <- data.frame(pops, bin=substr(pops$pops, 5, nchar(as.vector(pops$pops))-0))
-write.csv(pops, file="WPI_Covariate_Populations.csv")
+# NB that the VB species are missing their first letter, which needs to be added manually
+#write.csv(pops, file="WPI_Covariate_Populations.csv")
 
 # Examine distribution of species modeled with covariates compared to overall species
 # load function from file g.test.R
@@ -106,8 +108,8 @@ taxonomy <- taxonomy[,1:12]
 alldata <- merge(wpidata, taxonomy, by.x="sp", by.y="bin", all=FALSE)
 
 # Merge WPI output data with site characteristics from Francesco's survey results
-newdata <- read.csv("protection_hunting_TEAM sites.csv")
-alldata <- merge(alldata, newdata, by.x="site", by.y="Site", all=TRUE)
+protect <- read.csv("protection_hunting_TEAM sites.csv")
+alldata <- merge(alldata, protect, by.x="site", by.y="Site", all=TRUE)
 
 # Examine WPI output
 table(alldata$site, alldata$class)
@@ -119,11 +121,6 @@ pdf(file="DistributionSpeciesSites.pdf")
 par(mar=c(5,7,0,1))
 plot(table(table(alldata$sp)), main="", xlab="TEAM Sites", ylab="Number of Species", ylim=c(0,130), las=1, cex.axis=2, cex.lab=2, lwd=7, mgp=c(4,1,0))
 dev.off()
-
-
-
-
-
 
 
 
