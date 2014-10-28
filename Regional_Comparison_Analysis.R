@@ -54,6 +54,16 @@ summary(lm(TEAM_covs$Region_Per_est ~ TEAM_covs$site_type))
 # Check PA areas for species richness effects
 Areas <- read.csv("GFC_Forest_Change_Summary.csv")
 TEAM_covs <- merge(TEAM_covs, Areas, by.x="sitecode", by.y="Site_Code")
+boxplot(PA_ha~protection_level, data=TEAM_covs, xlab="Protection Level", ylab="Protected Area Size (ha)")
+boxplot(PA_ha~site_type, data=TEAM_covs, xlab="Site Type", ylab="Protected Area Size (ha)")
+
+
 summary(lm(TEAM_covs$Region_Per_est ~ TEAM_covs$site_type + log(TEAM_covs$PA_ha)))
-test <- resid(lm(TEAM_covs$Region_Per_est ~ TEAM_covs$PA_ha))
+area_rm <- resid(lm(TEAM_covs$Region_Per_est ~ TEAM_covs$PA_ha))
+
+set.panel(2,4)
+boxplot(area_rm ~ TEAM_covs$protection_level, xlab="Protection Level", ylab="Residuals")
+summary(lm(area_rm ~ TEAM_covs$protection_level))
+boxplot(area_rm ~ TEAM_covs$site_type, xlab="Site Type", ylab="Residuals")
+summary(lm(area_rm ~ TEAM_covs$site_type))
 
