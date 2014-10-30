@@ -20,10 +20,11 @@ library(ggplot2)
     #Spdata$site_type <- as.factor(ifelse(Spdata$site=="YAS", 1, Spdata$site_type))
 
     # Read in population level hunting survey data
-    Hunted <- read.csv(file="SpeciesHuntingData.csv")
+    #Hunted <- read.csv(file="SpeciesHuntingData.csv")
 
     # Note alternative hunting data file to include species that are hunted outside of the TEAM core area at COU and YAN
     #Hunted <- read.csv(file="SpeciesHuntingDataB.csv")
+    Hunted <- read.csv(file="SpeciesHuntingDataC.csv") #Classifies all species at BIF, PSH, BCI, UDZ and YAS as hunted b/c of snares & comments; all NNN species as not hunted
     Hunted <- Hunted[,3:4]
 
     # Merge hunting survey data with main population status file
@@ -54,7 +55,7 @@ library(ggplot2)
     WPIdata$ZOI <- scale(WPIdata$ZOI)
     WPIdata$ZOIminusPA <- scale(WPIdata$ZOIminusPA)
 
-    # Coerce survey data to ordinal predictors
+    # Coerce survey data to factors
     WPIdata$Q1 <- as.factor(WPIdata$Q1)
     WPIdata$Q2 <- as.factor(WPIdata$Q2)
     WPIdata$Q3 <- as.factor(WPIdata$Q3)
@@ -73,6 +74,7 @@ library(ggplot2)
                            ifelse(WPIdata$ind95=="increasing", 1, NA)))
     ind95_num <- as.factor(ind95_num)
     
+    # Explore different combinations of categorical data
     Q1B <- as.factor(ifelse(WPIdata$Q1==2,1,WPIdata$Q1))
     Q1C <- as.factor(ifelse(WPIdata$Q1==3,2,WPIdata$Q1))
 
@@ -96,10 +98,9 @@ library(ggplot2)
     Q6E <- as.factor(ifelse(WPIdata$Q6==2,1,ifelse(WPIdata$Q6==4,3,WPIdata$Q6)))    
     Q6F <- as.factor(ifelse(WPIdata$Q6==3,2,ifelse(WPIdata$Q6==4,2,WPIdata$Q6)))    
     Q6G <- as.factor(ifelse(WPIdata$Q6==3,1,ifelse(WPIdata$Q6==2,1,WPIdata$Q6)))    
-
-
-    WPI <- cbind(ind80_num, ind95_num, WPIdata, Q1B, Q1C, Q2B, Q2C, Q2D, Q2E, Q2F, Q2G, Q3B, Q3C, Q3D, Q3E, Q3F, Q3G, Q6B, Q6C, Q6D, Q6E, Q6F, Q6G) 
-
+    #WPI <- cbind(ind80_num, ind95_num, WPIdata, Q1B, Q1C, Q2B, Q2C, Q2D, Q2E, Q2F, Q2G, Q3B, Q3C, Q3D, Q3E, Q3F, Q3G, Q6B, Q6C, Q6D, Q6E, Q6F, Q6G) 
+    
+    WPI <- cbind(ind80_num, ind95_num, WPIdata)
 
 ################## ANALYSIS #########################
 
@@ -136,44 +137,74 @@ m8 <- clm(ind80_num ~ Q2, data=WPI)
 summary(m8)
 m9 <- clm(ind80_num ~ Q3, data=WPI)
 summary(m9)
-m10 <- clm(ind80_num ~ Q4, data=WPI)
+m10 <- clm(ind80_num ~ Q6, data=WPI)
 summary(m10)
-m11 <- clm(ind80_num ~ Q5, data=WPI)
+m11 <- clm(ind80_num ~ PA, data=WPI)
 summary(m11)
-m12 <- clm(ind80_num ~ Q6, data=WPI)
+m12 <- clm(ind80_num ~ ZOIminusPA, data=WPI)
 summary(m12)
-#m13 <- clm(ind80_num ~ Q7, data=WPI)
-#summary(m13)
-m14 <- clm(ind80_num ~ PA, data=WPI)
+m13 <- clm(ind80_num ~ site_type, data=WPI)
+summary(m13)
+m14 <- clm(ind80_num ~ cont, data=WPI)
 summary(m14)
-m15 <- clm(ind80_num ~ ZOIminusPA, data=WPI)
+m15 <- clm(ind80_num ~ site, data=WPI)
 summary(m15)
-m16 <- clm(ind80_num ~ site_type, data=WPI)
-summary(m16)
-m17 <- clm(ind80_num ~ cont, data=WPI)
-summary(m17)
-m18 <- clm(ind80_num ~ site, data=WPI)
-summary(m18)
 
-SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m14, m15, m16, m17, m18, rank=AIC)
+SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, rank=AIC)
 
-m19 <- clm(ind80_num ~ nyears, data=WPI)
-summary(m19)
-m20 <- clm(ind80_num ~ nyears + Q1, data=WPI)
+
+# Explore combinations of individual predictors that outperformed the null model
+m20 <- clm(ind80_num ~ nyears, data=WPI)
 summary(m20)
-m21 <- clm(ind80_num ~ nyears + Q3, data=WPI)
+m21 <- clm(ind80_num ~ nyears + site_type, data=WPI)
 summary(m21)
-m22 <- clm(ind80_num ~ nyears + Q1 + site_type, data=WPI)
+m22 <- clm(ind80_num ~ nyears + PA, data=WPI)
 summary(m22)
-m23 <- clm(ind80_num ~ nyears + site_type, data=WPI)
+m23 <- clm(ind80_num ~ nyears + site, data=WPI)
 summary(m23)
-m24 <- clm(ind80_num ~ nyears + site_type + site, data=WPI)
-#summary(m24)
+m24 <- clm(ind80_num ~ nyears + Q1, data=WPI)
+summary(m24)
+m25 <- clm(ind80_num ~ nyears + Hunted, data=WPI)
+summary(m25)
+m26 <- clm(ind80_num ~ nyears + cont, data=WPI)
+summary(m26)
+m27 <- clm(ind80_num ~ nyears + ZOIminusPA, data=WPI)
+summary(m27)
+m28 <- clm(ind80_num ~ nyears + Q2, data=WPI)
+summary(m28)
+m29 <- clm(ind80_num ~ nyears + Q3, data=WPI)
+summary(m29)
+m30 <- clm(ind80_num ~ nyears + site_type + Hunted, data=WPI)
+summary(m30)
+m31 <- clm(ind80_num ~ nyears + site_type + Q1, data=WPI)
+summary(m31)
+m32 <- clm(ind80_num ~ nyears + site_type + Q2, data=WPI)
+summary(m32)
 
-model.sel(m19, m20, m21, m22, m23, m24, m0, rank=AIC)
+model.sel(m20, m21, m22, m23, m24, m25, m26, m27, m28, m29, m30, m31, m32, m0, rank=AIC)
+test <- model.sel(m21, m30, m25)
+# Add random effects for site or continent to top model
+m21.site <- clmm2(ind80_num ~ nyears + site_type, random=site, data=WPI, Hess=TRUE, nAGQ=10)
+summary(m21.site)
+m21.cont <- clmm2(ind80_num ~ nyears + site_type, random=cont, data=WPI, Hess=TRUE, nAGQ=10)
+summary(m21.cont)
 
-m23.site <- clmm2(ind80_num ~ nyears + site_type, random=site, data=WPI, Hess=TRUE, nAGQ=10)
-summary(m23.site)
-m23.cont <- clmm2(ind80_num ~ nyears + site_type, random=cont, data=WPI, Hess=TRUE, nAGQ=10)
-summary(m23.cont)
+# Test goodness of fit of top model
+nominal_test(m25)
+scale_test(m25)
 
+
+
+x.new1 <- data.frame(site_type="remote", Hunted="Yes", nyears=5)
+x.new2 <- data.frame(site_type="remote", Hunted="No", nyears=5)
+x.new3 <- data.frame(site_type="remote", Hunted="Unknown", nyears=5)
+x.new4 <- data.frame(site_type="extractive", Hunted="Yes", nyears=5)
+x.new5 <- data.frame(site_type="extractive", Hunted="No", nyears=5)
+x.new6 <- data.frame(site_type="extractive", Hunted="Unknown", nyears=5)
+x.new7 <- data.frame(site_type="settled", Hunted="Yes", nyears=5)
+x.new8 <- data.frame(site_type="settled", Hunted="No", nyears=5)
+x.new9 <- data.frame(site_type="settled", Hunted="Unknown", nyears=5)
+
+
+predict(m30, x.new1)
+?predict
