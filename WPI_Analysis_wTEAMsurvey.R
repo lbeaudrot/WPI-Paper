@@ -16,6 +16,11 @@ library(ggplot2)
     Spdata <- data.frame(Spdata[,1:14], site_type=Spdata[,25])
     Spdata <- Spdata[,1:15]
 
+    rls2 <- ifelse(Spdata$rls=="DD", "E.DD", ifelse(Spdata$rls=="LC", "D.LC", ifelse(Spdata$rls=="NT", "C.NT", ifelse(Spdata$rls=="VU", "B.VU", ifelse(Spdata$rls=="EN", "A.EN", NA)))))
+    Site_cat <- as.factor(ifelse(Spdata$site_type=="remote", "C.Remote", ifelse(Spdata$site_type=="extractive", "B.Extractive", ifelse(Spdata$site_type=="settled", "A.Settled", NA))))
+  
+    Spdata <- data.frame(Spdata, rls2=rls2, Site_cat=Site_cat)
+
     # Reclassify YAS site type as extractive
     #Spdata$site_type <- as.factor(ifelse(Spdata$site=="YAS", 1, Spdata$site_type))
 
@@ -24,21 +29,33 @@ library(ggplot2)
 
     # Note alternative hunting data file to include species that are hunted outside of the TEAM core area at COU and YAN
     #Hunted <- read.csv(file="SpeciesHuntingDataB.csv")
-    Hunted <- read.csv(file="SpeciesHuntingDataC.csv") #Classifies all species at BIF, PSH, BCI, UDZ and YAS as hunted b/c of snares & comments; all NNN species as not hunted
+    #Hunted <- read.csv(file="SpeciesHuntingDataC.csv") #Classifies all species at BIF, PSH, BCI, UDZ and YAS as hunted b/c of snares & comments; all NNN species as not hunted
+    #Hunted <- read.csv(file="SpeciesHuntingDataD.csv") #Classifies all species at NNN as not hunted; all species at BCI & YAS as hunted; all but 1 species at PSH as hunted; adds 2 snared species at BIF
+#Hunted <- read.csv(file="SpeciesHuntingDataE.csv") # Classifies all NNN as not hunted; former "no" at BCI to "unknown" to correspond with YAS, UDZ and PSH approaches
+    Hunted <- read.csv(file="SpeciesHuntingDataF.csv") # Classifies all NNN as not hunted; former "no" at BCI and YAS to "yes" based on notes; not PSH b/c of snares
+#Hunted <- read.csv(file="SpeciesHuntingDataG.csv") # Classifies all NNN as not hunted
     Hunted <- Hunted[,3:4]
-
+    Hunted2 <- ifelse(Hunted$Hunted=="No", "No", "Yes")
+    Hunted <- data.frame(Hunted, Hunted2=Hunted2)
     # Merge hunting survey data with main population status file
     Spdata <- merge(Spdata, Hunted, by.x="site.sp", by.y="site.sp")
-  
+    
+    # Manually remove 2 species that site managers indicated were incorrect identifications b/c of IUCN range maps
+    # Dasyprocta punctata at YAS (row 116)
+    # Muntiacus montanus at PSH (row 280)
+
+    Spdata <- Spdata[-280,]
+    Spdata <- Spdata[-116,]
+
     # Read in site-level forest loss data emailed from Alex on 10/22/2014
     FL <- read.csv("20141021_forest_loss.csv")
     FL <- cast(FL, sitecode ~ aoi, value="loss_pct")
 
     # Read in site-level survey data
-    Survey <- read.csv(file="SiteHuntingData.csv")
+#Survey <- read.csv(file="SiteHuntingData.csv")
     
     # Note alternative site-level survey data that uses BCI-BCNM and VB-La Selva instead of Soberania and BCNP, which have more camera traps
-    #Survey <- read.csv(file="SiteHuntingDataB.csv")
+    Survey <- read.csv(file="SiteHuntingDataB.csv")
 
     # Merge all site-level data
     Sitedata <- merge(FL, Survey, by.x="sitecode", by.y="Site.Code")
@@ -47,6 +64,33 @@ library(ggplot2)
     WPIdata <- merge(Spdata, Sitedata, by.x="site", by.y="sitecode", all=TRUE)
 
 ### Format data for analysis
+CV <- function(data){
+  sd(data)/mean(data)
+}
+
+elev.range <- function(data){
+  max(data) - min(data)
+}
+
+load("ct_pts_elev.Rdata")
+elevation.data <- ct_pts_elev
+names(elevation.data) <- c("Site.Code", "ct_ID", "Elevation")
+elevation.mean <- aggregate(elevation.data$Elevation ~ elevation.data$Site.Code, FUN=mean)
+elevation.CV <- aggregate(elevation.data$Elevation ~ elevation.data$Site.Code, FUN=CV)[2]
+elevation.range <- aggregate(elevation.data$Elevation ~ elevation.data$Site.Code, FUN=elev.range)[2]
+elevation <- cbind(elevation.mean, elevation.CV, elevation.range)
+colnames(elevation) <- c("Site.Code", "Elev.Mean", "Elev.CV", "Elev.Range")
+
+Area <- read.csv("GFC_Forest_Change_Summary.csv")
+names(Area) <- c("Site.Code", "ForestLossSite", "ForestLossZOI", "PA_area", "SA_area", "ZOI_area")
+Area <- Area[,-3]
+Area <- Area[,-2]
+
+Elev.Area <- merge(elevation, Area, by="Site.Code")
+
+WPIdata <- merge(WPIdata, Elev.Area, by.x="site", by.y="Site.Code")
+
+
 
     # Scale continuous covariates (mass, forest loss)
     WPIdata$mass <- scale(WPIdata$mass)
@@ -54,6 +98,12 @@ library(ggplot2)
     WPIdata$PA <- scale(WPIdata$PA)
     WPIdata$ZOI <- scale(WPIdata$ZOI)
     WPIdata$ZOIminusPA <- scale(WPIdata$ZOIminusPA)
+    WPIdata$Elev.Mean <- scale(WPIdata$Elev.Mean)
+    WPIdata$Elev.CV <- scale(WPIdata$Elev.CV)
+    WPIdata$Elev.Range <- scale(WPIdata$Elev.Range)
+    WPIdata$PA_area <- scale(WPIdata$PA_area)
+    WPIdata$SA_area <- scale(WPIdata$SA_area)
+    WPIdata$ZOI_area <- scale(WPIdata$ZOI_area)
 
     # Coerce survey data to factors
     WPIdata$Q1 <- as.factor(WPIdata$Q1)
@@ -102,6 +152,7 @@ library(ggplot2)
     
     WPI <- cbind(ind80_num, ind95_num, WPIdata)
 
+
 ################## ANALYSIS #########################
 
 # Examine a null model and random effects for site, continent and species
@@ -123,9 +174,9 @@ m2 <- clm(ind80_num ~ mass, data=WPI)
 summary(m2)
 m3 <- clm(ind80_num ~ guild, data=WPI)
 summary(m3)
-m4 <- clm(ind80_num ~ rls, data=WPI)
+m4 <- clm(ind80_num ~ rls2, data=WPI)
 summary(m4)
-m5 <- clm(ind80_num ~ Hunted, data=WPI)
+m5 <- clm(ind80_num ~ Hunted2, data=WPI)
 summary(m5)
 
 # Site attribute models
@@ -143,55 +194,77 @@ m11 <- clm(ind80_num ~ PA, data=WPI)
 summary(m11)
 m12 <- clm(ind80_num ~ ZOIminusPA, data=WPI)
 summary(m12)
-m13 <- clm(ind80_num ~ site_type, data=WPI)
+m13 <- clm(ind80_num ~ Site_cat, data=WPI)
 summary(m13)
 m14 <- clm(ind80_num ~ cont, data=WPI)
 summary(m14)
 m15 <- clm(ind80_num ~ site, data=WPI)
 summary(m15)
+m16 <- clm(ind80_num ~ Elev.CV, data=WPI)
+summary(m16)
+m17 <- clm(ind80_num ~ Elev.Range, data=WPI)
+summary(m17)
+m18 <- clm(ind80_num ~ PA_area, data=WPI)
+summary(m18)
+m19 <- clm(ind80_num ~ ZOI_area, data=WPI)
+summary(m19)
 
-SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, rank=AIC)
+
+SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, rank=AIC)
 
 
 # Explore combinations of individual predictors that outperformed the null model
 m20 <- clm(ind80_num ~ nyears, data=WPI)
 summary(m20)
-m21 <- clm(ind80_num ~ nyears + site_type, data=WPI)
+m21 <- clm(ind80_num ~ nyears + Q1, data=WPI)
 summary(m21)
-m22 <- clm(ind80_num ~ nyears + PA, data=WPI)
+m22 <- clm(ind80_num ~ nyears + Q2, data=WPI)
 summary(m22)
-m23 <- clm(ind80_num ~ nyears + site, data=WPI)
+m23 <- clm(ind80_num ~ nyears + Elev.CV, data=WPI)
 summary(m23)
-m24 <- clm(ind80_num ~ nyears + Q1, data=WPI)
+m24 <- clm(ind80_num ~ nyears + Hunted2, data=WPI)
 summary(m24)
-m25 <- clm(ind80_num ~ nyears + Hunted, data=WPI)
+m25 <- clm(ind80_num ~ nyears + PA_area, data=WPI)
 summary(m25)
-m26 <- clm(ind80_num ~ nyears + cont, data=WPI)
+m26 <- clm(ind80_num ~ nyears + Site_cat, data=WPI)
 summary(m26)
-m27 <- clm(ind80_num ~ nyears + ZOIminusPA, data=WPI)
+m27 <- clm(ind80_num ~ nyears + Elev.Range, data=WPI)
 summary(m27)
-m28 <- clm(ind80_num ~ nyears + Q2, data=WPI)
+m28 <- clm(ind80_num ~ nyears + Q3, data=WPI)
 summary(m28)
-m29 <- clm(ind80_num ~ nyears + Q3, data=WPI)
+m29 <- clm(ind80_num ~ nyears + PA, data=WPI)
 summary(m29)
-m30 <- clm(ind80_num ~ nyears + site_type + Hunted, data=WPI)
+m30 <- clm(ind80_num ~ nyears + rls2, data=WPI)
 summary(m30)
-m31 <- clm(ind80_num ~ nyears + site_type + Q1, data=WPI)
+m31 <- clm(ind80_num ~ nyears + site, data=WPI)
 summary(m31)
-m32 <- clm(ind80_num ~ nyears + site_type + Q2, data=WPI)
+m32 <- clm(ind80_num ~ nyears + cont, data=WPI)
 summary(m32)
 
 model.sel(m20, m21, m22, m23, m24, m25, m26, m27, m28, m29, m30, m31, m32, m0, rank=AIC)
-test <- model.sel(m21, m30, m25)
+
+m33 <- clm(ind80_num ~ nyears + PA_area + Hunted2, data=WPI, link="cloglog")
+summary(m33)
+m34 <- clm(ind80_num ~ nyears + PA_area + Site_cat, data=WPI)
+summary(m34)
+m35 <- clm(ind80_num ~ nyears + PA_area + Site_cat + Hunted2, data=WPI)
+summary(m35)
+m36 <- clm(ind80_num ~ nyears + PA_area + Q1, data=WPI)
+summary(m36)
+
+
+model.sel(m24, m25, m33, m34, m35)
+
+test <- model.sel(m21, m22, m30)
 # Add random effects for site or continent to top model
-m21.site <- clmm2(ind80_num ~ nyears + site_type, random=site, data=WPI, Hess=TRUE, nAGQ=10)
-summary(m21.site)
-m21.cont <- clmm2(ind80_num ~ nyears + site_type, random=cont, data=WPI, Hess=TRUE, nAGQ=10)
-summary(m21.cont)
+m33.site <- clmm2(ind80_num ~ nyears + PA_area + Hunted2, random=site, data=WPI, Hess=TRUE, nAGQ=10)
+summary(m33.site)
+m33.cont <- clmm2(ind80_num ~ nyears + PA_area + Hunted2, random=cont, data=WPI, Hess=TRUE, nAGQ=10)
+summary(m33.cont)
 
 # Test goodness of fit of top model
-nominal_test(m25)
-scale_test(m25)
+nominal_test(m33)
+scale_test(m33)
 
 
 
