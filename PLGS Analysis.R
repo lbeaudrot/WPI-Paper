@@ -3,6 +3,7 @@ PLGS Analysis of TEAM data WPI output
 library(ape) 
 library(caper) 
 library(phytools)
+library(dummies)
 
 #load unresolved phylo (FROM JP LESSARD)
 phylo<-read.nexus("mammalST_MSW05_all.tre")
@@ -22,6 +23,15 @@ Spdata$sp <- gsub("Nesotragus moschatus", "Neotragus moschatus", Spdata$sp)
 Spdata$sp <- gsub("Smutsia gigantea", "Manis gigantea", Spdata$sp)
 
 
+# Add dummy variables for categorical predictors
+
+G <- dummy(Spdata$guild)
+R <- dummy(Spdata$rls)
+S <- dummy(Spdata$site_type)
+H <- dummy(Spdata$Hunted)
+H2 <- dummy(Spdata$Hunted2)
+
+Spdata <- cbind(Spdata, G, R, S, H, H2)
 
 
 
@@ -43,7 +53,6 @@ tree<-multi2di(drop.tip(phylo, phylo$tip.label[!phylo$tip.label %in% Mtraits$spn
 
 # Now add in duplicate species to include all populations with corresponding site codes
 # Add a new tip for each row in spname2
-add.species.to.genus(tree, "Arctictis_binturong NAK", where="root")
 
 hold <- list()
 tree_pops <- tree
@@ -62,6 +71,14 @@ tree2 <- drop.tip(tree_pops, tip=spname)
 # 2. Look at the phylogeny
 plot.phylo(tree2,type="phylogram",cex=0.07, adj=1, label.offset=3)
 
+# Explore traits across phylogeny
+plotBranchbyTrait(z$phy, log(z$data$mass), mode="edges", cex=0.07, adj=1, label.offset=3)
+plot.phylo(z$phy,type="phylogram",cex=0.07, adj=1, label.offset=3, tip.color=unclass(as.factor(z$data$guild)))
+plot.phylo(z$phy,type="phylogram",cex=0.07, adj=1, label.offset=3, tip.color=c("green", "black", "red")[unclass(as.factor(z$data$Hunted))])
+plot.phylo(z$phy,type="phylogram",cex=0.07, adj=1, label.offset=3, tip.color=c("green", "red")[unclass(as.factor(z$data$Hunted2))])
+plot.phylo(z$phy,type="phylogram",cex=0.07, adj=1, label.offset=3, tip.color=c("red", "green", "black")[unclass(as.factor(z$data$ind80))])
+
+
 # 3. Set up a "Comparative Data Object" ####
 
 #We use the function "comparative.data' in the caper package to build an object that combines our phylogeny with our dataset.
@@ -76,6 +93,74 @@ z<-comparative.data(tree2,data=Mtraits, names="spname2",na.omit=F)
 
 # Check to see if any species were dropped
 z$dropped
+
+
+# Data Exploration
+
+
+plot(median.coeff ~ log(mass), data=z$data, pch=20,xlab= "log Body Mass (g)", ylab="Median Coefficient")
+plot(median.coeff ~ guild, data=z$data, pch=20,xlab= "log Body Mass (g)", ylab="Median Coefficient")
+plot(median.coeff ~ Hunted2, data=z$data, pch=20,xlab= "log Body Mass (g)", ylab="Median Coefficient")
+plot(median.coeff ~ nyears, data=z$data, pch=20,xlab= "log Body Mass (g)", ylab="Median Coefficient")
+
+
+## PGLS with the Maximum Likelihood estimate of Lambda
+pgls1<-pgls(median.coeff ~ log(mass), data=z, lambda="ML")
+summary(pgls1)
+abline(pgls1, col=3, lwd=2, lty=1)
+
+pgls2<-pgls(median.coeff ~ guild, data=z, lambda="ML")
+summary(pgls2)
+abline(pgls2, col=3, lwd=2, lty=1)
+
+pgls3<-pgls(median.coeff ~ Hunted2, data=z, lambda="ML")
+summary(pgls3)
+abline(pgls3, col=3, lwd=2, lty=1)
+
+pgls4<-pgls(median.coeff ~ nyears + Hunted2No + guildCarnivore + guildHerbivore + guildInsectivore, data=z, lambda="ML")
+summary(pgls4)
+abline(pgls4, col=3, lwd=2, lty=1)
+
+
+# Examine phylogenetic signal in residuals of regression model following Revell 2010
+test <- phyl.resid(z$phy, x=as.vector(z$data$nyears), Y=as.vector(z$data$median.coeff), method="lambda")
+phylosig(z$phy, test$resid, method="lambda")
+
+IND80 <- z$data$ind80_num
+IND80 <- as.numeric(as.character(IND80))
+names(IND80) <- z$phy$tip.label
+
+
+MC <- as.vector(z$data$median.coeff)
+names(MC) <- z$phy$tip.label
+
+NYEARS <- as.vector(z$data$nyears)
+names(NYEARS) <- z$phy$tip.label
+
+GUILDS <- as.matrix(cbind(z$data$guildCarnivore, z$data$guildHerbivore, z$data$guildInsectivore))
+names(GUILDS) <- z$phy$tip.label
+
+Hunting2 <- as.vector(z$data$Hunted2No)
+names(Hunting) <- z$phy$tip.label
+
+test1 <- phyl.resid(z$phy, x=NYEARS, Y=MC, method="lambda")
+phylosig(z$phy, test1$resid, method="K")
+
+test2 <- phyl.resid(z$phy, x=GUILDS, Y=MC, method="lambda")
+phylosig(z$phy, test2$resid, method="K")
+
+test3 <- phyl.resid(z$phy, x=Hunting2, Y=MC, method="lambda")
+phylosig(z$phy, test3$resid, method="K")
+
+test4 <- phyl.resid(z$phy, x=log(z$data$mass), Y=MC, method="lambda")
+phylosig(z$phy, test4$resid, method="K")
+
+test5 <- phyl.resid(z$phy, x=cbind(NYEARS, GUILDS, Hunting2), Y=MC, method="lambda")
+phylosig(z$phy, test5$resid, method="K")
+
+
+
+
 
 
 
