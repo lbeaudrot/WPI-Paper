@@ -42,7 +42,7 @@ const_sp <- cbind(const_sp, const=rep(1, dim(const_sp)[1]))
 simple_sp <- taxonomy[match(simple, taxonomy$id),]
 simple_sp <- cbind(simple_sp, simple=rep(1, dim(simple_sp)[1]))
 
-# Identify the site and species for populations modeled with covariates
+# Identify the site and species for populations modeled with covariates (Case 3)
 sitekey <- read.csv("sitecode_key.csv")
 
 WPIsimple.code <- data.frame(WPIsimple, code=sitekey$sitecode[match(WPIsimple$site_id, sitekey$database_code)])
@@ -52,9 +52,37 @@ WPIsimple.code <- data.frame(WPIsimple.code, sp.site=paste(WPIsimple.code$bin, W
 
 pops <- unique(WPIsimple.code$site.sp)
 pops <- as.character(pops)
-pops <- data.frame(pops, site=substr(pops, 1, 3))
+pops <- data.frame(Case=pops, site=substr(pops, 1, 3))
+pops <- data.frame(pops, bin=substr(pops$Case, 5, nchar(as.vector(pops$Case))-0), Case="simple")
 
-pops <- data.frame(pops, bin=substr(pops$pops, 5, nchar(as.vector(pops$pops))-0))
+# Identify the site and species for populations modeled with no covariates (Case 2)
+
+WPIconstant.code <- data.frame(WPIconst, code=sitekey$sitecode[match(WPIconst$site_id, sitekey$database_code)])
+WPIconstant.code <- data.frame(WPIconstant.code, bin=taxonomy$bin[match(WPIconst$species_id, taxonomy$id)])
+WPIconstant.code <- data.frame(WPIconstant.code, site.sp=paste(WPIconstant.code$code, WPIconstant.code$bin, sep="."))
+WPIconstant.code <- data.frame(WPIconstant.code, sp.site=paste(WPIconstant.code$bin, WPIconstant.code$code, sep="."))
+
+popsC <- unique(WPIconstant.code$site.sp)
+popsC <- as.character(popsC)
+popsC <- data.frame(Case=popsC, site=substr(popsC, 1, 3))
+popsC <- data.frame(popsC, bin=substr(popsC$Case, 5, nchar(as.vector(popsC$Case))-0), Case="constant")
+
+# Identify the site and species for populations with naieve occupancy values (Case 1)
+
+WPIbinomial.code <- data.frame(WPIbinomial, code=sitekey$sitecode[match(WPIbinomial$site_id, sitekey$database_code)])
+WPIbinomial.code <- data.frame(WPIbinomial.code, bin=taxonomy$bin[match(WPIbinomial$species_id, taxonomy$id)])
+WPIbinomial.code <- data.frame(WPIbinomial.code, site.sp=paste(WPIbinomial.code$code, WPIbinomial.code$bin, sep="."))
+WPIbinomial.code <- data.frame(WPIbinomial.code, sp.site=paste(WPIbinomial.code$bin, WPIbinomial.code$code, sep="."))
+
+popsB <- unique(WPIbinomial.code$site.sp)
+popsB <- as.character(popsB)
+popsB <- data.frame(Case=popsB, site=substr(popsB, 1, 3))
+popsB <- data.frame(popsB, bin=substr(popsB$Case, 5, nchar(as.vector(popsB$Case))-0), Case="binomial")
+
+Cases <- rbind(pops, popsC, popsB)
+Cases <- data.frame(Cases, SiteSp=paste(Cases$bin, Cases$site, sep="-"))
+Cases <- data.frame(site.sp=Cases$SiteSp, Case=Cases$Case.1)
+
 # NB that the VB species are missing their first letter, which needs to be added manually
 #write.csv(pops, file="WPI_Covariate_Populations.csv")
 
@@ -425,7 +453,7 @@ test <- data.frame(multiples, tot=rowSums(multiples))
 
 ggplot(WPI, aes(median.coeff)) +
     geom_histogram() +
-    facet_grid(nyears~.) +
+    facet_grid(nyears~.) + 
     xlim(-3, 3) +
     xlab("Number of Years") +
     ylab("Frequency")
@@ -437,4 +465,9 @@ ggplot(WPI, aes(median.coeff)) +
     xlab("Median coef") +
     ylab("Frequency")
 
-
+ggplot(WPI, aes(median.coeff)) +
+    geom_histogram() +
+    facet_grid(nyears~protection_level) +
+    xlim(-3, 3) +
+    xlab("Number of Years") +
+    ylab("Frequency")
