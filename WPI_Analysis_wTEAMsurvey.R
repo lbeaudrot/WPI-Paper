@@ -31,9 +31,9 @@ library(ggplot2)
     #Hunted <- read.csv(file="SpeciesHuntingDataB.csv")
     #Hunted <- read.csv(file="SpeciesHuntingDataC.csv") #Classifies all species at BIF, PSH, BCI, UDZ and YAS as hunted b/c of snares & comments; all NNN species as not hunted
     #Hunted <- read.csv(file="SpeciesHuntingDataD.csv") #Classifies all species at NNN as not hunted; all species at BCI & YAS as hunted; all but 1 species at PSH as hunted; adds 2 snared species at BIF
-#Hunted <- read.csv(file="SpeciesHuntingDataE.csv") # Classifies all NNN as not hunted; former "no" at BCI to "unknown" to correspond with YAS, UDZ and PSH approaches
-    Hunted <- read.csv(file="SpeciesHuntingDataF.csv") # Classifies all NNN as not hunted; former "no" at BCI and YAS to "yes" based on notes; not PSH b/c of snares
-#Hunted <- read.csv(file="SpeciesHuntingDataG.csv") # Classifies all NNN as not hunted
+    Hunted <- read.csv(file="SpeciesHuntingDataE.csv") # Classifies all NNN as not hunted; former "no" at BCI to "unknown" to correspond with YAS, UDZ and PSH approaches
+    #Hunted <- read.csv(file="SpeciesHuntingDataF.csv") # Classifies all NNN as not hunted; former "no" at BCI and YAS to "yes" based on notes; not PSH b/c of snares
+    #Hunted <- read.csv(file="SpeciesHuntingDataG.csv") # Classifies all NNN as not hunted
     Hunted <- Hunted[,3:4]
     Hunted2 <- ifelse(Hunted$Hunted=="No", "No", "Yes")
     Hunted <- data.frame(Hunted, Hunted2=Hunted2)
@@ -152,7 +152,42 @@ WPIdata <- merge(WPIdata, Elev.Area, by.x="site", by.y="Site.Code")
     
     WPI <- cbind(ind80_num, ind95_num, WPIdata)
 
+################ GOODNESS OF FIT TESTS ######################
+table(WPI$Hunted2, WPI$ind80)
+g.test(table(WPI$Hunted2, WPI$ind80))
+g.test(table(WPI$Hunted2, WPI$ind95))
 
+table(WPI$rls, WPI$ind80)
+g.test(table(WPI$rls, WPI$ind80))
+g.test(table(WPI$rls, WPI$ind95))
+
+table(WPI$Q1, WPI$ind80)
+g.test(table(WPI$Q1, WPI$ind80))
+g.test(table(WPI$Q1, WPI$ind95))
+
+table(WPI$Q2, WPI$ind80)
+g.test(table(WPI$Q2, WPI$ind80))
+g.test(table(WPI$Q2, WPI$ind95))
+
+table(WPI$Q3, WPI$ind80)
+g.test(table(WPI$Q3, WPI$ind80))
+g.test(table(WPI$Q3, WPI$ind95))
+
+table(WPI$Q6, WPI$ind80)
+g.test(table(WPI$Q6, WPI$ind80))
+g.test(table(WPI$Q6, WPI$ind95))
+
+table(WPI$site_type, WPI$ind80)
+g.test(table(WPI$site_type, WPI$ind80))
+g.test(table(WPI$site_type, WPI$ind95))
+
+table(WPI$nyears, WPI$ind80)
+g.test(table(WPI$nyears, WPI$ind80))
+g.test(table(WPI$nyears, WPI$ind95))
+
+table(WPI$guild, WPI$ind80)
+g.test(table(WPI$guild, WPI$ind80))
+g.test(table(WPI$guild, WPI$ind95))
 ################## ANALYSIS #########################
 
 # Examine a null model and random effects for site, continent and species
@@ -172,12 +207,14 @@ m1 <- clm(ind80_num ~ class, data=WPI)
 summary(m1)
 m2 <- clm(ind80_num ~ mass, data=WPI)
 summary(m2)
-m3 <- clm(ind80_num ~ guild, data=WPI)
+m3 <- clm(ind80_num ~ 1, nominal=~guild, data=WPI)
 summary(m3)
-m4 <- clm(ind80_num ~ rls2, data=WPI)
-summary(m4)
-m5 <- clm(ind80_num ~ Hunted2, data=WPI)
+#m4 <- clm(ind80_num ~ 1, nominal=~rls2, data=WPI)
+#summary(m4)
+m5 <- clm(ind80_num ~ 1, nominal=~Hunted, data=WPI)
 summary(m5)
+m5.2 <- clm(ind80_num ~ 1, nominal=~Hunted2, data=WPI)
+summary(m5.2)
 
 # Site attribute models
 m6 <- clm(ind80_num ~ nyears, data=WPI)
@@ -190,56 +227,56 @@ m9 <- clm(ind80_num ~ Q3, data=WPI)
 summary(m9)
 m10 <- clm(ind80_num ~ Q6, data=WPI)
 summary(m10)
-m11 <- clm(ind80_num ~ PA, data=WPI)
+m11 <- clm(ind80_num ~ PA, scale=~PA, data=WPI) # Fails nominal and scale tests but is continuous, needs scale?
 summary(m11)
 m12 <- clm(ind80_num ~ ZOIminusPA, data=WPI)
 summary(m12)
-m13 <- clm(ind80_num ~ Site_cat, data=WPI)
+m13 <- clm(ind80_num ~ 1, nominal=~Site_cat, data=WPI)
 summary(m13)
-m14 <- clm(ind80_num ~ cont, data=WPI)
+m14 <- clm(ind80_num ~ 1, nominal=~cont, data=WPI)
 summary(m14)
-m15 <- clm(ind80_num ~ site, data=WPI)
+m15 <- clm(ind80_num ~ 1, nominal=~site, data=WPI)
 summary(m15)
-m16 <- clm(ind80_num ~ Elev.CV, data=WPI)
-summary(m16)
-m17 <- clm(ind80_num ~ Elev.Range, data=WPI)
-summary(m17)
-m18 <- clm(ind80_num ~ PA_area, data=WPI)
+#m16 <- clm(ind80_num ~ Elev.CV, scale=~Elev.CV, data=WPI)
+#summary(m16)
+#m17 <- clm(ind80_num ~ Elev.Range, scale=~Elev.Range, data=WPI)
+#summary(m17)
+m18 <- clm(ind80_num ~ PA_area, scale=~PA_area, data=WPI)
 summary(m18)
 m19 <- clm(ind80_num ~ ZOI_area, data=WPI)
 summary(m19)
 
 
-SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, rank=AIC)
+SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m5, m5.2, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m18, m19, rank=AIC)
 
 
 # Explore combinations of individual predictors that outperformed the null model
-m20 <- clm(ind80_num ~ nyears, data=WPI)
+m20 <- clm(ind80_num ~ nyears + Q1, data=WPI)
 summary(m20)
-m21 <- clm(ind80_num ~ nyears + Q1, data=WPI)
+m21 <- clm(ind80_num ~ nyears, nominal=~guild, data=WPI)
 summary(m21)
-m22 <- clm(ind80_num ~ nyears + Q2, data=WPI)
+m22 <- clm(ind80_num ~ nyears, nominal=~Hunted, data=WPI)
 summary(m22)
-m23 <- clm(ind80_num ~ nyears + Elev.CV, data=WPI)
+m23 <- clm(ind80_num ~ nyears + Q2, data=WPI)
 summary(m23)
-m24 <- clm(ind80_num ~ nyears + Hunted2, data=WPI)
+m24 <- clm(ind80_num ~ nyears, nominal=~Hunted2, data=WPI)
 summary(m24)
 m25 <- clm(ind80_num ~ nyears + PA_area, data=WPI)
 summary(m25)
-m26 <- clm(ind80_num ~ nyears + Site_cat, data=WPI)
+m26 <- clm(ind80_num ~ nyears, nominal=~cont, data=WPI)
 summary(m26)
-m27 <- clm(ind80_num ~ nyears + Elev.Range, data=WPI)
+m27 <- clm(ind80_num ~ nyears, nominal=~Site_cat, data=WPI)
 summary(m27)
-m28 <- clm(ind80_num ~ nyears + Q3, data=WPI)
+m28 <- clm(ind80_num ~ nyears + PA, data=WPI)
 summary(m28)
-m29 <- clm(ind80_num ~ nyears + PA, data=WPI)
+m29 <- clm(ind80_num ~ nyears + Q3, data=WPI)
 summary(m29)
-m30 <- clm(ind80_num ~ nyears + rls2, data=WPI)
+m30 <- clm(ind80_num ~ nyears + Q1, nominal=~guild, data=WPI)
 summary(m30)
-m31 <- clm(ind80_num ~ nyears + site, data=WPI)
+m31 <- clm(ind80_num ~ nyears, nominal=~guild + Hunted2, data=WPI)
 summary(m31)
-m32 <- clm(ind80_num ~ nyears + cont, data=WPI)
-summary(m32)
+#m32 <- clm(ind80_num ~ nyears, nominal=~guild + Hunted, data=WPI)
+#summary(m32)
 
 model.sel(m20, m21, m22, m23, m24, m25, m26, m27, m28, m29, m30, m31, m32, m0, rank=AIC)
 
@@ -251,6 +288,20 @@ m35 <- clm(ind80_num ~ nyears + PA_area + Site_cat + Hunted2, data=WPI)
 summary(m35)
 m36 <- clm(ind80_num ~ nyears + PA_area + Q1, data=WPI)
 summary(m36)
+
+links <- c("logit", "probit", "cloglog", "loglog", "cauchit")
+sapply(links, function(link){
+  clm(ind80_num ~ nyears + PA_area + Hunted2, data=WPI, link=link)$logLik})
+
+fm4.lgt <- update(m33, link = "logit") ## default
+fm4.prt <- update(m33, link = "probit")
+fm4.ll <- update(m33, link = "loglog")
+fm4.cll <- update(m33, link = "cloglog")
+fm4.cct <- update(m33, link = "cauchit")
+anova(fm4.lgt, fm4.prt, fm4.ll, fm4.cll, fm4.cct)
+
+# get significance values from list: use summary(model)[[6]]
+
 
 
 model.sel(m24, m25, m33, m34, m35)
