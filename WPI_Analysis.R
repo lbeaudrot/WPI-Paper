@@ -52,6 +52,7 @@ WPIsimple.code <- data.frame(WPIsimple.code, sp.site=paste(WPIsimple.code$bin, W
 
 pops <- unique(WPIsimple.code$site.sp)
 pops <- as.character(pops)
+pops <- gsub("VB.", "VB-.", pops)
 pops <- data.frame(Case=pops, site=substr(pops, 1, 3))
 pops <- data.frame(pops, bin=substr(pops$Case, 5, nchar(as.vector(pops$Case))-0), Case="simple")
 
@@ -64,6 +65,7 @@ WPIconstant.code <- data.frame(WPIconstant.code, sp.site=paste(WPIconstant.code$
 
 popsC <- unique(WPIconstant.code$site.sp)
 popsC <- as.character(popsC)
+popsC <- gsub("VB.", "VB-.", popsC)
 popsC <- data.frame(Case=popsC, site=substr(popsC, 1, 3))
 popsC <- data.frame(popsC, bin=substr(popsC$Case, 5, nchar(as.vector(popsC$Case))-0), Case="constant")
 
@@ -76,12 +78,16 @@ WPIbinomial.code <- data.frame(WPIbinomial.code, sp.site=paste(WPIbinomial.code$
 
 popsB <- unique(WPIbinomial.code$site.sp)
 popsB <- as.character(popsB)
+popsB <- gsub("VB.", "VB-.", popsB)
 popsB <- data.frame(Case=popsB, site=substr(popsB, 1, 3))
 popsB <- data.frame(popsB, bin=substr(popsB$Case, 5, nchar(as.vector(popsB$Case))-0), Case="binomial")
 
 Cases <- rbind(pops, popsC, popsB)
+Cases$site <- factor(ifelse(Cases$site=="VB-", "VB", as.character(Cases$site)))
 Cases <- data.frame(Cases, SiteSp=paste(Cases$bin, Cases$site, sep="-"))
 Cases <- data.frame(site.sp=Cases$SiteSp, Case=Cases$Case.1)
+
+
 
 # NB that the VB species are missing their first letter, which needs to be added manually
 #write.csv(pops, file="WPI_Covariate_Populations.csv")
