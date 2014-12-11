@@ -24,7 +24,7 @@ ggplot(WPI, aes(median.coeff)) +
 
 WPIplot1 <- ggplot(WPI, aes(median.coeff, fill=factor(ind80))) +
   geom_histogram() +
-  facet_grid(Year_cat~Hunted2) +
+  facet_grid(nyears~Hunted2) +
   xlim(-2, 2) +
   xlab("Median coefficient") +
   ylab("Terrestrial Vertebrate Populations") 

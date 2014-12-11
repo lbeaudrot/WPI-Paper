@@ -22,6 +22,7 @@ d <- d[d$site.sp!="Muntiacus montanus-PSH",]
 
     # Add data on case used to model each population (see object "Cases" from file "WPI_Analysis.R")
     SpdataCase <- merge(Spdata, Cases, by.x="site.sp", by.y="site.sp")
+#NB - SpdataCase is currently missing VB populations (probably b/c of site code abbreviation mismatch in merge)
 
 dCase <- merge(d, SpdataCase, by.x="site.sp", by.y="site.sp")
 d_simple <- dCase[dCase$Case=="simple",]
@@ -32,6 +33,8 @@ d_80inc <- dCase[dCase$ind80=="increasing",]
 d_80dec <- dCase[dCase$ind80=="decreasing",]
 d_80sta <- dCase[dCase$ind80=="stable",]
 
+d_bi.sta <- dCase[dCase$Case=="binomial" & dCase$ind80=="stable",]
+
 # Create a list where each element in the list is the posterior distribution of a single population
 # Then loop through list to create denstrip figure
 # Sample code from Miguel:
@@ -41,28 +44,20 @@ d_80sta <- dCase[dCase$ind80=="stable",]
     #you have to play with "at" and "width" to get the structure that you want; "at" will depend on the scale of the y axis.
  
 # Use to split the input data into a list based on site.sp
-d.list <- dlply(d, "site.sp")
-names(d.list) <- unique(d$site.sp)
+#d.list <- dlply(d, "site.sp")
+#names(d.list) <- unique(d$site.sp)
 
-# Separate out by case
-d.listS <- dlply(d_simple, "site.sp")
-names(d.listS) <- unique(d_simple$site.sp)
+use.subset <- d_bi.sta
+  use.list <- dlply(use.subset, "site.sp")
+  names(use.list) <- unique(use.subset$site.sp)
 
-d.listC <- dlply(d_constant, "site.sp")
-names(d.listC) <- unique(d_constant$site.sp)
+# Loop over all elements in list
+#use.list <- d.list
 
-d.listB <- dlply(d_binomial, "site.sp")
-names(d.listB) <- unique(d_binomial$site.sp)
-
-# Separate out by status
-d.list80Inc <- dlply(d_80inc, "site.sp")
-names(d.list80Inc) <- unique(d_80inc$site.sp)
-
-d.list80Dec <- dlply(d_80dec, "site.sp")
-names(d.list80Dec) <- unique(d_80dec$site.sp)
-
-d.list80Sta <- dlply(d_80sta, "site.sp")
-names(d.list80Sta) <- unique(d_80sta$site.sp)
+plot(x, xlim=c(-6,6), ylim=c(0,length(use.list)), xlab="x", ylab="y", type="n")
+for(i in 1:length(use.list)){
+  denstrip(use.list[[i]][,7], at=i, width=1)
+}
 
 
 # Plot using denstrip
@@ -70,14 +65,6 @@ names(d.list80Sta) <- unique(d_80sta$site.sp)
 x <- d.list[[1]][,7]
 plot(x, xlim=c(-3,3), ylim=c(-3,3), xlab="x", ylab="y", type="n")
 denstrip(x, at=0)
-
-# Loop over all elements in list
-use.list <- d.listB
-
-plot(x, xlim=c(-3,3), ylim=c(0,length(use.list)), xlab="x", ylab="y", type="n")
-for(i in 1:length(use.list)){
-  denstrip(use.list[[i]][,7], at=i, width=1)
-}
 
 # See example code 
 ## Lattice example data: heights of singing voice types

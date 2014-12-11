@@ -16,6 +16,9 @@ library(ggplot2)
     Spdata <- data.frame(Spdata[,1:14], site_type=Spdata[,25])
     Spdata <- Spdata[,1:15]
 
+    # If interested in examining Case, bring in object SpdataCase from file Stable_Classification.R and WPI_Analysis.R
+    # Spdata <- SpdataCase
+
     rls2 <- ifelse(Spdata$rls=="DD", "E.DD", ifelse(Spdata$rls=="LC", "D.LC", ifelse(Spdata$rls=="NT", "C.NT", ifelse(Spdata$rls=="VU", "B.VU", ifelse(Spdata$rls=="EN", "A.EN", NA)))))
     Site_cat <- as.factor(ifelse(Spdata$site_type=="remote", "C.Remote", ifelse(Spdata$site_type=="extractive", "B.Extractive", ifelse(Spdata$site_type=="settled", "A.Settled", NA))))
   
@@ -72,7 +75,7 @@ elev.range <- function(data){
   max(data) - min(data)
 }
 
-load("ct_pts_elev.Rdata")
+load("ct_pts_elev.RData")
 elevation.data <- ct_pts_elev
 names(elevation.data) <- c("Site.Code", "ct_ID", "Elevation")
 elevation.mean <- aggregate(elevation.data$Elevation ~ elevation.data$Site.Code, FUN=mean)
@@ -188,6 +191,10 @@ g.test(table(WPI$nyears, WPI$ind95))
 table(WPI$guild, WPI$ind80)
 g.test(table(WPI$guild, WPI$ind80))
 g.test(table(WPI$guild, WPI$ind95))
+
+table(WPI$Case, WPI$ind80)
+g.test(WPI$Case, WPI$ind80)
+g.test(WPI$Case, WPI$ind95)
 ################## ANALYSIS #########################
 
 # Examine a null model and random effects for site, continent and species
@@ -207,13 +214,13 @@ m1 <- clm(ind80_num ~ class, data=WPI)
 summary(m1)
 m2 <- clm(ind80_num ~ mass, data=WPI)
 summary(m2)
-m3 <- clm(ind80_num ~ 1, nominal=~guild, data=WPI)
+m3 <- clm(ind80_num ~ guild, data=WPI)
 summary(m3)
 #m4 <- clm(ind80_num ~ 1, nominal=~rls2, data=WPI)
 #summary(m4)
-m5 <- clm(ind80_num ~ 1, nominal=~Hunted, data=WPI)
+m5 <- clm(ind80_num ~ Hunted, data=WPI)
 summary(m5)
-m5.2 <- clm(ind80_num ~ 1, nominal=~Hunted2, data=WPI)
+m5.2 <- clm(ind80_num ~ Hunted2, data=WPI)
 summary(m5.2)
 
 # Site attribute models
@@ -227,37 +234,37 @@ m9 <- clm(ind80_num ~ Q3, data=WPI)
 summary(m9)
 m10 <- clm(ind80_num ~ Q6, data=WPI)
 summary(m10)
-m11 <- clm(ind80_num ~ PA, scale=~PA, data=WPI) # Fails nominal and scale tests but is continuous, needs scale?
+m11 <- clm(ind80_num ~ PA,  data=WPI) # Fails nominal and scale tests but is continuous, needs scale?
 summary(m11)
 m12 <- clm(ind80_num ~ ZOIminusPA, data=WPI)
 summary(m12)
-m13 <- clm(ind80_num ~ 1, nominal=~Site_cat, data=WPI)
+m13 <- clm(ind80_num ~ Site_cat, data=WPI)
 summary(m13)
-m14 <- clm(ind80_num ~ 1, nominal=~cont, data=WPI)
+m14 <- clm(ind80_num ~ cont, data=WPI)
 summary(m14)
-m15 <- clm(ind80_num ~ 1, nominal=~site, data=WPI)
+m15 <- clm(ind80_num ~ site, data=WPI)
 summary(m15)
-#m16 <- clm(ind80_num ~ Elev.CV, scale=~Elev.CV, data=WPI)
-#summary(m16)
-#m17 <- clm(ind80_num ~ Elev.Range, scale=~Elev.Range, data=WPI)
-#summary(m17)
+m16 <- clm(ind80_num ~ Elev.CV,  data=WPI)
+summary(m16)
+m17 <- clm(ind80_num ~ Elev.Range,  data=WPI)
+summary(m17)
 m18 <- clm(ind80_num ~ PA_area, scale=~PA_area, data=WPI)
 summary(m18)
 m19 <- clm(ind80_num ~ ZOI_area, data=WPI)
 summary(m19)
 
 
-SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m5, m5.2, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m18, m19, rank=AIC)
+SinglePredic.Sel <- model.sel(m0, m1, m2, m3, m5, m5.2, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, rank=AIC)
 
 
 # Explore combinations of individual predictors that outperformed the null model
-m20 <- clm(ind80_num ~ nyears + Q1, data=WPI)
+m20 <- clm(ind80_num ~ nyears + Site_cat, data=WPI)
 summary(m20)
-m21 <- clm(ind80_num ~ nyears, nominal=~guild, data=WPI)
+m21 <- clm(ind80_num ~ nyears + site, data=WPI)
 summary(m21)
-m22 <- clm(ind80_num ~ nyears, nominal=~Hunted, data=WPI)
+m22 <- clm(ind80_num ~ nyears + Site_cat + Elev.CV, data=WPI)
 summary(m22)
-m23 <- clm(ind80_num ~ nyears + Q2, data=WPI)
+m23 <- clm(ind80_num ~ nyears + Elev.CV, data=WPI)
 summary(m23)
 m24 <- clm(ind80_num ~ nyears, nominal=~Hunted2, data=WPI)
 summary(m24)
@@ -308,7 +315,7 @@ model.sel(m24, m25, m33, m34, m35)
 
 test <- model.sel(m21, m22, m30)
 # Add random effects for site or continent to top model
-m33.site <- clmm2(ind80_num ~ nyears + PA_area + Hunted2, random=site, data=WPI, Hess=TRUE, nAGQ=10)
+m33.site <- clmm2(ind80_num ~ nyears + PA_area + Q6, random=site, data=WPI, Hess=TRUE, nAGQ=10)
 summary(m33.site)
 m33.cont <- clmm2(ind80_num ~ nyears + PA_area + Hunted2, random=cont, data=WPI, Hess=TRUE, nAGQ=10)
 summary(m33.cont)
