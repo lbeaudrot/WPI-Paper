@@ -2,6 +2,8 @@
 # Visualize posterior distributions for all TEAM populations
 
 library(denstrip)
+library(plyr)
+library(coda)
 
 d <- read.csv(file="raw_logistic_coeffs.csv")
 # Remove populations from Manaus
@@ -47,7 +49,7 @@ d_bi.sta <- dCase[dCase$Case=="binomial" & dCase$ind80=="stable",]
 #d.list <- dlply(d, "site.sp")
 #names(d.list) <- unique(d$site.sp)
 
-use.subset <- d_bi.sta
+use.subset <- dCase
   use.list <- dlply(use.subset, "site.sp")
   names(use.list) <- unique(use.subset$site.sp)
 
@@ -96,3 +98,36 @@ bwplot(site.sp ~ coeffs, data=d, xlab="Logistic Coefficients",
 # Examine posterior distributions based on model case (i.e. 1, 2, or 3) used with expectation that rare species will have widest distributions
 # Examine based on current classification of decreasing/stable/increasing
 # Examine after ordering them based on median of distribution; add red line to represent median
+
+# First, subset the coeffs column from the list of dataframes
+col7 <- llply(use.list, "[", 7)
+Col7 <- llply(col7, as.matrix)
+COL7 <- llply(Col7, as.vector)
+
+# Classify each population as increasing/decreasing/stable based on different levels of confidence
+# Reclassify species with descrepancies between 50% and 80% CIs as "unknown"
+
+test <- ldply(COL7, quantile, prob=c(0.025, 0.975)) # 95% CI
+status95 <- ifelse(test[,2]>0 & test[,3]>0, "increasing", ifelse(test[,2]<0 & test[,3]<0, "decreasing", "stable"))
+test <- cbind(test, status95)
+
+test2 <- ldply(COL7, quantile, prob=c(0.1, 0.9)) # 80% CI
+status80 <- ifelse(test2[,2]>0 & test2[,3]>0, "increasing", ifelse(test2[,2]<0 & test2[,3]<0, "decreasing", "stable"))
+test2 <- cbind(test2, status80)
+
+test3 <- ldply(COL7, quantile, prob=c(0.25, 0.75)) # 50% CI
+status50 <- ifelse(test3[,2]>0 & test3[,3]>0, "increasing", ifelse(test3[,2]<0 & test3[,3]<0, "decreasing", "stable"))
+test3 <- cbind(test3, status50)
+
+test4 <- cbind(test, test2, test3)
+
+unknown <- ifelse(test4$status80==test4$status50, as.character(test4$status50), "unknown")
+test4 <- cbind(test, test2, test3, unknown)
+
+# Need to merge new classifications with WPI object and rerun analysis excluding unknown species
+
+quantile(trythis, c(0.025, 0.975)) 
+quantile(trythis, c(0.1, 0.9)) 
+quantile(trythis, c(0.25, 0.75)) 
+
+trythis <- ldply(col7[[1]][,1], .fun=quantile, c(0.025, 0.975))
