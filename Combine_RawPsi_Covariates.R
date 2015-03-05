@@ -1,12 +1,11 @@
-# WPI Analysis with binomial case treated as "rare" categorization
+
+############ COMBINE ALL VARIABLES TO RAW FILE FOR WPI FIGURE & CREATE A SUMMARIZED FILE FOR WPI ANALYSIS ############
+# Combine psi dump from WPI system with most recently available covariate data
+# Note especially new variables for WPI Figure: Hunted, Q1, ZOIminusPA_cat, PA_cat, mass_cat and NewRare80
+
 rm(list=ls())
 library(reshape)
 source("g.test.R")
-
-# Load Summarized WPI output (produced from code below)
-#newdata <- read.csv("Species-site-results_Jan_2015_LB.csv")
-
-############ COMBINE ALL VARIABLES TO RAW FILE FOR WPI FIGURE & CREATE A SUMMARIZED FILE FOR WPI ANALYSIS ############
 
 # Read in the last 1000 iterations of the WPI and add column for model_type
 WPIbinomial <- read.csv("psi_species_model_binomial_last1000_v1.csv")
@@ -74,8 +73,6 @@ WPIunique <- WPIunique[,-19] # Remove site because it duplicates sitecode and ha
 # Remove unused site levels
 WPIunique$sitecode <- factor(WPIunique$sitecode)
 
-
-
 # Add species level hunting data
 Hunted <- read.csv(file="SpeciesHuntingDataE.csv") # Classifies all NNN as not hunted; former "no" at BCI to "unknown" to correspond with YAS, UDZ and PSH approaches
 Hunted <- Hunted[,3:4]
@@ -97,7 +94,6 @@ Site.Code <- substr(alldata$Sampling.Unit.Name,4,6)
 alldata <- cbind(alldata, Site.Code)
 site.sp <- paste(alldata$Genus, alldata$Species, alldata$Site.Code, sep=" ")
 alldata <- cbind(alldata, site.sp)
-
 
 names <- as.character(unique(alldata$site.sp))
 count <- table(alldata$site.sp)
@@ -136,14 +132,13 @@ WPIdata$Hunted <- ifelse(WPIdata$site.sp=="Sciurus igniventris-YAS", "Yes", WPId
 WPIdata$Hunted2 <- ifelse(WPIdata$site.sp=="Sciurus igniventris-YAS", "Yes", WPIdata$Hunted2) 
 
 # REMOVE POPULATIONS LACKING WPI
-
 WPIdata <- WPIdata[is.na(WPIdata$NewRare80)==FALSE,]
 
 # Add site level survey data
-# Get ride of extra site categories in survey data
 Survey <- read.csv(file="SiteHuntingDataB.csv")
-Survey <- Survey[-14,] # Remove VB-BCNP
-Survey <- Survey[-3,] # Remove BCI-Soberania
+  # Get ride of extra site categories in survey data
+  Survey <- Survey[-14,] # Remove VB-BCNP
+  Survey <- Survey[-3,] # Remove BCI-Soberania
 
 WPIdata <- merge(WPIdata, Survey, by.x="sitecode", by.y="Site.Code", all=TRUE)
 WPIdata$Q1 <- as.factor(WPIdata$Q1)
@@ -167,23 +162,19 @@ FL <- melt(FL)
 FL <- FL[,-3]
 NewFL <- cast(FL, sitecode ~ aoi)
 
+# Discretize forest loss into categories based on breaks in histograms
 ZOI_cat <- ifelse(NewFL$ZOI<1, "1", ifelse(NewFL$ZOI>=1 & NewFL$ZOI<5, "2", ifelse(NewFL$ZOI>=5, "3", NA)))
 ZOIminusPA_cat <- ifelse(NewFL$ZOIminusPA<1, "1", ifelse(NewFL$ZOIminusPA>=1 & NewFL$ZOIminusPA<5, "2", ifelse(NewFL$ZOIminusPA>=5, "3", NA)))
 PA_cat <- ifelse(NewFL$PA<0.1, "1", ifelse(NewFL$PA>=0.1 & NewFL$PA<1, "2", ifelse(NewFL$PA>=1, "3", NA)))
-
 NewFL <- cbind(NewFL, ZOIminusPA_cat, PA_cat, ZOI_cat)
-
-
-# Create Forest Loss Categories
 
 # Merge NewFL with summarized table
 WPI <- merge(WPI, NewFL, by="sitecode")
 
-# Write summarized table
-write.csv(WPI, file="Species-site-results_March_2015_LB_SurveyData.csv")
+# WRITE SUMMARIZED COVARIATE TABLE
+write.csv(WPI, file="Species-site-results_March_05_2015_LB_SurveyData.csv")
 
-
-# Combine summarized table with raw psi values for Jorge's use in WPI figure (WPIall)
+# COMBINE SUMMARIZED COVARIATE FILE WITH RAW PSI values for Jorge's use in WPI figure (WPIall)
 
 # Reduce WPIall columns for merge to avoid duplicates
 head(WPIall)
@@ -197,5 +188,6 @@ WPI.subset <- data.frame(WPI[,1:2], WPI[,6:47])
 # Merge
 PsiAll_w_AllCovariates <- merge(All.reduced, WPI.subset, by="site.sp")
 
+# WRITE RAW PSI FILE WITH COVARIATES
 write.csv(PsiAll_w_AllCovariates, file="PsiAll_w_AllCovariates.csv")
 
