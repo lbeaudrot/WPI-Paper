@@ -5,7 +5,7 @@
 
 rm(list=ls())
 library(reshape)
-source("g.test.R")
+
 
 # Read in the last 1000 iterations of the WPI and add column for model_type
 WPIbinomial <- read.csv("psi_species_model_binomial_last1000_v1.csv")
@@ -13,14 +13,15 @@ WPIbinomial <- cbind(WPIbinomial, model_type=rep("binom", dim(WPIbinomial)[1]))
 WPIsimple <- read.csv("psi_species_simplemodel_last1000_v1.csv")
 WPIsimple <- cbind(WPIsimple, model_type=rep("simple", dim(WPIsimple)[1]))
 WPIconst <- read.csv("psi_species_model_const-phi-gam-p_last1000_v1.csv")
-WPIconst <- cbind(WPIconst, model_type=rep("simple", dim(WPIconst)[1]))
+WPIconst <- cbind(WPIconst, model_type=rep("const", dim(WPIconst)[1]))
 
+# Combine output from three models
 WPIall <- rbind(WPIbinomial, WPIsimple, WPIconst)
 
 # Read in the taxonomy data that corresponds with the ids used in the WPI analysis
 taxonomy <- read.csv("taxonomy_scientific_name_wpi_20140414_LB2.csv")
 
-# Fill in missing guild and mass values
+# Fill in missing guild and mass values (see email w/Jorge on 4/23/2014)
 # Arborophila chloropus - omnivore
 # Crypturellus bartletti - omnivore
 # Nothocrax urumutum - herbivore (100% fruit diet)
@@ -30,7 +31,7 @@ taxonomy$guild <- ifelse(as.character(taxonomy$bin=="Arborophila chloropus")==TR
                   ifelse(as.character(taxonomy$bin=="Crypturellus bartletti")==TRUE, "Omnivore",
                   ifelse(as.character(taxonomy$bin=="Nothocrax urumutum")==TRUE, "Herbivore", 
                   ifelse(as.character(taxonomy$bin=="Trichys fasciculata")==TRUE, "Omnivore", as.character(taxonomy$guild)))))
-
+# Fill in missing body mass value from close relative
 taxonomy$mass <- ifelse(as.character(taxonomy$bin=="Lophotibis cristata")==TRUE, 850, taxonomy$mass)
 
 # Match taxonomy to species id values
@@ -55,9 +56,11 @@ status <- data.frame(status[,1:8], nyears=status[,13], site_type=status[,25])
 WPIunique <- merge(WPIunique, status, by="site.sp")
 
 # Add new 95% and 80% columns that also have "rare" category
+# Classify all populations modeled with the binomial model as rare
 Rare95 <- ifelse(WPIunique$model_type=="binom", "rare", as.character(WPIunique$ind95))
 Rare80 <- ifelse(WPIunique$model_type=="binom", "rare", as.character(WPIunique$ind80))
 WPIunique <- data.frame(WPIunique, Rare95, Rare80)
+# Classify only the populations modeled with binomial and "stable" in ind80 and ind95 as rare (thus use rare but increasing & decreasing)
 NewRare80 <-ifelse(WPIunique$ind80=="decreasing" & WPIunique$Rare80=="rare", "decreasing", ifelse(WPIunique$ind80=="increasing" & WPIunique$Rare80=="rare", "increasing", as.character(WPIunique$Rare80)))
 NewRare95 <-ifelse(WPIunique$ind95=="decreasing" & WPIunique$Rare95=="rare", "decreasing", ifelse(WPIunique$ind95=="increasing" & WPIunique$Rare95=="rare", "increasing", as.character(WPIunique$Rare95)))
 WPIunique <- cbind(WPIunique, NewRare80, NewRare95)
@@ -84,7 +87,6 @@ WPIdata <- merge(WPIunique, Hunted, by.x="site.sp", by.y="site.sp", all=TRUE)
 # Inspect NA values cbind(WPIdata[,1], WPIdata[,29:31])
 # There are several mismatches between species hunting survey name list and WPIunique name list
 # See file "Known_Species_Counts_10.31.2014Database.csv"
-# Populations with WPI output available but missing hunting data
 
 #load("ct_data2014-10-31.gzip")
 #load("ct_data2015-03-05")
@@ -151,8 +153,8 @@ WPIdata$Q7 <- as.factor(WPIdata$Q7)
 
 WPI <- WPIdata
 
-#Provide body mass categories
-mass_cat <- ifelse(WPI$mass<1001, "1", ifelse(WPI$mass>1000 & WPI$mass<5001, "2", ifelse(WPI$mass>5000, "3", NA)))
+#Create body mass categories
+mass_cat <- ifelse(WPI$mass<100, "1", ifelse(WPI$mass>=1000 & WPI$mass<5000, "2", ifelse(WPI$mass>=5000, "3", NA)))
 mass_cat <- factor(mass_cat)
 WPI <- cbind(WPI, mass_cat=mass_cat)
 
@@ -172,7 +174,7 @@ NewFL <- cbind(NewFL, ZOIminusPA_cat, PA_cat, ZOI_cat)
 WPI <- merge(WPI, NewFL, by="sitecode")
 
 # WRITE SUMMARIZED COVARIATE TABLE
-write.csv(WPI, file="Species-site-results_March_05_2015_LB_SurveyData.csv")
+write.csv(WPI, file="Species-site-results_March_06_2015_LB_SurveyData.csv")
 
 # COMBINE SUMMARIZED COVARIATE FILE WITH RAW PSI values for Jorge's use in WPI figure (WPIall)
 
