@@ -1,7 +1,7 @@
 
 ############ COMBINE ALL VARIABLES TO RAW FILE FOR WPI FIGURE & CREATE A SUMMARIZED FILE FOR WPI ANALYSIS ############
 # Combine psi dump from WPI system with most recently available covariate data
-# Note especially new variables for WPI Figure: Hunted, Q1, ZOIminusPA_cat, PA_cat, mass_cat and NewRare80
+# Note especially new variables for WPI Figure: Hunted, Q1, cat10, mass_cat and NewRare80 (ZOIminusPA_cat, PA_cat also new)
 
 rm(list=ls())
 library(reshape)
